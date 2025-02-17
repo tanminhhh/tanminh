@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TANMINH DEV</title>
     <style>
-        @keyframes analyzing {
-            0%, 100% { content: "Lớn..."; }
-            50% { content: "Nhỏ..."; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
@@ -18,18 +19,20 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
+            width: 100vw;
             text-align: center;
         }
 
         .container {
-            text-align: center;
             background: rgba(255, 255, 255, 0.1);
             padding: 20px;
             border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
             width: 90%;
             max-width: 400px;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         h1 {
@@ -39,12 +42,7 @@
             background: linear-gradient(90deg, #00feba, #5b548a);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: glow 1.5s infinite alternate;
-        }
-
-        @keyframes glow {
-            0% { text-shadow: 0 0 5px #00feba; }
-            100% { text-shadow: 0 0 15px #5b548a; }
+            text-shadow: 0 0 10px #00feba;
         }
 
         textarea, button {
@@ -158,8 +156,14 @@
                 let confidenceLarge = calculateConfidence(numbers, "Lớn");
                 let confidenceSmall = calculateConfidence(numbers, "Nhỏ");
 
-                let result = confidenceLarge > confidenceSmall ? "Lớn" : "Nhỏ";
-                let confidence = Math.max(confidenceLarge, confidenceSmall);
+                let result, confidence;
+                if (Math.abs(confidenceLarge - confidenceSmall) < 10) {
+                    result = Math.random() > 0.5 ? "Lớn" : "Nhỏ";
+                    confidence = Math.max(confidenceLarge, confidenceSmall);
+                } else {
+                    result = confidenceLarge > confidenceSmall ? "Lớn" : "Nhỏ";
+                    confidence = Math.max(confidenceLarge, confidenceSmall);
+                }
 
                 return { result, confidence };
             }
@@ -171,22 +175,33 @@
 
                 let patternWeight = detectPattern(numbers, type);
                 let statisticalConfidence = calculateStatisticalProbability(numbers, type);
+                let trendCorrection = detectReverseTrend(numbers, type);
 
-                let confidence = Math.round(((matchCount / 10) * 40) + patternWeight + statisticalConfidence);
+                let confidence = Math.round(((matchCount / 10) * 30) + patternWeight + statisticalConfidence + trendCorrection);
                 
-                return Math.min(Math.max(confidence, 50), 90);
+                return Math.min(Math.max(confidence, 50), 85);
             }
 
             function calculateStatisticalProbability(numbers, type) {
                 let totalCount = numbers.length;
                 let typeCount = numbers.filter(n => (n >= 5 ? "Lớn" : "Nhỏ") === type).length;
-                return (typeCount / totalCount) * 50;
+                return (typeCount / totalCount) * 30;
             }
 
             function detectPattern(numbers, type) {
                 let lastFive = numbers.slice(-5);
                 let matches = lastFive.filter(n => (type === "Lớn" ? n >= 5 : n < 5)).length;
-                return matches * 8;
+                return matches * 6;
+            }
+
+            function detectReverseTrend(numbers, type) {
+                let lastSix = numbers.slice(-6);
+                let trend = lastSix.map(n => (n >= 5 ? "Lớn" : "Nhỏ"));
+                let count = trend.filter(r => r === type).length;
+
+                if (count === 6) return -15;
+                if (count === 5) return -10;
+                return 0;
             }
 
             function updateHistory() {
