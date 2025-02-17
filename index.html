@@ -45,7 +45,7 @@
             text-shadow: 0 0 10px #00feba;
         }
 
-        textarea, button {
+        textarea, button, input {
             width: 100%;
             padding: 12px;
             border: none;
@@ -106,6 +106,10 @@
         <div id="result" class="hidden"></div>
         <div id="historyToggle">Lịch Sử ▼</div>
         <div id="history" class="hidden"></div>
+
+        <!-- New result input field -->
+        <input type="text" id="newResultInput" placeholder="Nhập kết quả mới (Lớn hoặc Nhỏ)">
+        <button id="addNewResultButton">Thêm Kết Quả Mới</button>
     </div>
 
     <script>
@@ -116,8 +120,11 @@
             const result = document.getElementById("result");
             const historyToggle = document.getElementById("historyToggle");
             const history = document.getElementById("history");
+            const newResultInput = document.getElementById("newResultInput");
+            const addNewResultButton = document.getElementById("addNewResultButton");
 
             let historyData = [];
+            let allNumbers = [];
 
             inputNumbers.addEventListener("input", () => {
                 let numbers = inputNumbers.value.replace(/\D+/g, '').split('').join(',');
@@ -131,12 +138,36 @@
                     return;
                 }
 
+                allNumbers = allNumbers.concat(numbers.map(Number)); // Add new numbers to the list
                 loading.style.display = "block";
                 result.classList.add("hidden");
 
                 setTimeout(() => {
-                    let prediction = analyzeNumbers(numbers);
+                    let prediction = analyzeNumbers(allNumbers);
                     historyData.push(prediction);
+                    if (historyData.length > 30) historyData.shift();  // Giới hạn lịch sử chỉ 30 kết quả
+                    updateHistory();
+                    loading.style.display = "none";
+                    result.classList.remove("hidden");
+                    result.innerHTML = `<b>Kết Quả:</b> ${prediction.result} (${prediction.confidence}%)`;
+                }, Math.random() * 5000 + 5000);
+            });
+
+            addNewResultButton.addEventListener("click", () => {
+                let newResult = newResultInput.value.trim();
+                if (newResult !== "Lớn" && newResult !== "Nhỏ") {
+                    alert("Vui lòng nhập 'Lớn' hoặc 'Nhỏ'.");
+                    return;
+                }
+
+                allNumbers.push(newResult === "Lớn" ? 5 : 4);  // Add corresponding number for the result
+                newResultInput.value = "";  // Clear input field
+
+                loading.style.display = "block";
+                setTimeout(() => {
+                    let prediction = analyzeNumbers(allNumbers);
+                    historyData.push(prediction);
+                    if (historyData.length > 30) historyData.shift();  // Giới hạn lịch sử chỉ 30 kết quả
                     updateHistory();
                     loading.style.display = "none";
                     result.classList.remove("hidden");
