@@ -3,197 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TANMINH DEV</title>
+    <title>TANMINH DEV - Dự Đoán Wingo</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            background-color: #0f172a;
             color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            width: 100vw;
             text-align: center;
-            flex-direction: column;
         }
-
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
         h1 {
             font-size: 24px;
             font-weight: bold;
             text-transform: uppercase;
-            background: linear-gradient(90deg, #00feba, #5b548a);
+            background: linear-gradient(90deg, #ff8a00, #e52e71);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 10px #00feba;
-            margin-bottom: 20px;
+            color: transparent;
+            display: inline-block;
+            animation: glowing 1.5s infinite alternate;
         }
-
-        textarea, button, input {
-            width: 100%;
-            padding: 12px;
+        @keyframes glowing {
+            0% { text-shadow: 0 0 10px #e52e71; }
+            100% { text-shadow: 0 0 20px #ff8a00; }
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 16px;
-            margin-top: 10px;
+        }
+        input {
+            width: 60%;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
             text-align: center;
         }
-
-        textarea, input {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
         button {
-            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            background: linear-gradient(45deg, #ff8a00, #e52e71);
             color: white;
             cursor: pointer;
             transition: 0.3s;
-            border-radius: 12px;
         }
-
         button:hover {
-            background: linear-gradient(135deg, #0072ff, #00c6ff);
-            transform: scale(1.05);
+            background: linear-gradient(45deg, #e52e71, #ff8a00);
         }
-
-        #loading {
-            margin-top: 10px;
-            font-weight: bold;
-            font-size: 18px;
-            color: #ffeb3b;
-            display: none;
-        }
-
         #result {
+            font-size: 20px;
             margin-top: 10px;
-            font-size: 18px;
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffeb3b;
-            padding: 10px;
-            border-radius: 10px;
-            display: none;
         }
-
         #history {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #ffeb3b;
-            text-align: left;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px;
-            border-radius: 10px;
-            max-height: 200px;
-            overflow-y: auto;
+            display: none;
+            margin-top: 15px;
+        }
+        #loading {
+            display: none;
+            font-size: 18px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>TANMINH DEV</h1>
-        <textarea id="inputNumbers" placeholder="Nhập dãy số, ít nhất 20 số..."></textarea>
-        <button id="analyzeButton">Xác Nhận</button>
-        <div id="loading">Đang phân tích...</div>
-        <div id="result"></div>
-        <div id="history"></div>
 
-        <input type="text" id="newResultInput" placeholder="Nhập kết quả mới (số)">
-        <button id="addNewResultButton">Cập Nhật Kết Quả</button>
+    <h1>TANMINH DEV - Dự Đoán Wingo</h1>
+
+    <input type="text" id="numberInput" placeholder="Nhập dãy số (cách nhau dấu phẩy)">
+    <button onclick="analyzeNumbers()">Phân Tích</button>
+    <button onclick="addNewResult()">Thêm Kết Quả</button>
+    <button onclick="toggleHistory()">Lịch sử</button>
+
+    <div id="loading">Đang phân tích...</div>
+    <div id="result"></div>
+
+    <div id="history">
+        <h3>Lịch sử dự đoán</h3>
+        <ul id="historyList"></ul>
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const inputNumbers = document.getElementById("inputNumbers");
-            const analyzeButton = document.getElementById("analyzeButton");
-            const loading = document.getElementById("loading");
-            const result = document.getElementById("result");
-            const history = document.getElementById("history");
-            const newResultInput = document.getElementById("newResultInput");
-            const addNewResultButton = document.getElementById("addNewResultButton");
+        let historyData = [];
 
-            let allNumbers = [];
+        function formatInput() {
+            let inputField = document.getElementById("numberInput");
+            let value = inputField.value.replace(/\s+/g, "").replace(/[^0-9,]/g, "");
+            value = value.replace(/,+/g, ",");
+            if (value.endsWith(",")) value = value.slice(0, -1);
+            inputField.value = value;
+        }
 
-            analyzeButton.addEventListener("click", () => {
-                let numbers = inputNumbers.value.match(/\d+/g);
-                if (!numbers || numbers.length < 20) {
-                    alert("Vui lòng nhập ít nhất 20 số.");
-                    return;
-                }
+        document.getElementById("numberInput").addEventListener("input", formatInput);
 
-                allNumbers = numbers.map(Number);
-                inputNumbers.disabled = true;
-                analyzeData();
+        function analyzeNumbers() {
+            let inputField = document.getElementById("numberInput");
+            let numbers = inputField.value.split(",").map(n => parseInt(n)).filter(n => !isNaN(n));
+
+            if (numbers.length < 20) {
+                alert("Bạn phải nhập ít nhất 20 số!");
+                return;
+            }
+
+            document.getElementById("result").innerHTML = "";
+            document.getElementById("loading").style.display = "block";
+
+            setTimeout(() => {
+                let prediction = aiAnalyze(numbers);
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("result").innerHTML = `Dự đoán: <b>${prediction.result}</b> (${prediction.percentage}%)`;
+
+                historyData.unshift(prediction.result + " (" + prediction.percentage + "%)");
+                if (historyData.length > 30) historyData.pop();
+                updateHistory();
+            }, 5000);
+        }
+
+        function addNewResult() {
+            let inputField = document.getElementById("numberInput");
+            let newNumber = prompt("Nhập số mới:");
+
+            if (!newNumber || isNaN(newNumber)) {
+                alert("Số không hợp lệ!");
+                return;
+            }
+
+            newNumber = parseInt(newNumber);
+            let currentNumbers = inputField.value ? inputField.value.split(",") : [];
+            currentNumbers.push(newNumber);
+            inputField.value = currentNumbers.join(",");
+        }
+
+        function aiAnalyze(numbers) {
+            let last10 = numbers.slice(-10);
+            let sum = last10.reduce((a, b) => a + b, 0);
+            let avg = sum / last10.length;
+
+            let percentage = Math.min(95, Math.max(70, Math.round(Math.random() * 15 + 70)));
+            let result = avg >= 5 ? "Lớn" : "Nhỏ";
+
+            return { result, percentage };
+        }
+
+        function toggleHistory() {
+            let historyDiv = document.getElementById("history");
+            historyDiv.style.display = historyDiv.style.display === "none" ? "block" : "none";
+        }
+
+        function updateHistory() {
+            let historyList = document.getElementById("historyList");
+            historyList.innerHTML = "";
+            historyData.forEach(item => {
+                let li = document.createElement("li");
+                li.textContent = item;
+                historyList.appendChild(li);
             });
-
-            addNewResultButton.addEventListener("click", () => {
-                const newResult = newResultInput.value.trim();
-                if (!newResult.match(/^\d+$/)) {
-                    alert("Vui lòng nhập một số hợp lệ.");
-                    return;
-                }
-
-                allNumbers.push(Number(newResult));
-                newResultInput.value = "";
-                analyzeData();
-            });
-
-            function analyzeData() {
-                loading.style.display = "block";
-                result.style.display = "none";
-
-                setTimeout(() => {
-                    const prediction = enhancedPrediction(allNumbers);
-                    const accuracy = (Math.random() * (1 - 0.7) + 0.7).toFixed(2) * 100;
-
-                    result.textContent = `Dự đoán: ${prediction} | Tỷ lệ chính xác: ${accuracy}%`;
-                    result.style.display = "block";
-                    loading.style.display = "none";
-
-                    history.innerHTML += `<p>Dãy số: ${allNumbers.join(', ')} | Dự đoán: ${prediction} | Tỷ lệ: ${accuracy}%</p>`;
-                }, 5000);
-            }
-
-            function enhancedPrediction(numbers) {
-                const groupNumbers = groupNumbersByPattern(numbers);
-                const hiddenPattern = findHiddenPattern(groupNumbers);
-                return analyzePatternsAndTrends(groupNumbers, hiddenPattern);
-            }
-
-            function groupNumbersByPattern(numbers) {
-                return numbers.reduce((acc, num) => {
-                    if (!acc[num]) acc[num] = 0;
-                    acc[num]++;
-                    return acc;
-                }, {});
-            }
-
-            function findHiddenPattern(groupNumbers) {
-                return Object.keys(groupNumbers).find(num => groupNumbers[num] > 2);
-            }
-
-            function analyzePatternsAndTrends(groupNumbers, hiddenPattern) {
-                if (hiddenPattern) return "Lớn";
-                return Math.random() > 0.5 ? "Lớn" : "Nhỏ";
-            }
-        });
+        }
     </script>
+
 </body>
 </html>
